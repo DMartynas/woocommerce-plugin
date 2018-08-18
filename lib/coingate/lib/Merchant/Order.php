@@ -20,6 +20,16 @@ class Order extends Merchant
         return $this->order;
     }
 
+    public function get_id()
+    {
+        return $this->order->id;
+    }
+
+    public function get_order_key()
+    {
+        return $this->order->order_key;
+    }
+
     public function __get($name)
     {
         return $this->order[$name];

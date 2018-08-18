@@ -101,7 +101,10 @@ function coingate_init()
                     'options' => array(
                         'BTC' => __('Bitcoin (฿)', 'woocommerce'),
                         'EUR' => __('Euros (€)', 'woocommerce'),
-                        'USD' => __('U.S. Dollars ($)', 'woocommerce')
+                        'USD' => __('U.S. Dollars ($)', 'woocommerce'),
+                        'ETH' => __('Etherium', 'woocommerce'),
+                        'LTC' => __('Litecoin', 'woocommerce'),
+                        'DO_NOT_CONVERT' => __('Do not convert', 'woocommerce')
                     ),
                     'description' => __('Choose the currency in which your payouts will be made (BTC, EUR or USD). For real-time EUR or USD settlements, you must verify as a merchant on CoinGate. Do not forget to add your Bitcoin address or bank details for payouts on <a href="https://coingate.com" target="_blank">your CoinGate account</a>.', 'woocomerce'),
                     'default' => 'BTC',
@@ -151,14 +154,14 @@ function coingate_init()
             $wcOrder = wc_get_order($order_id);
 
             $order = \CoinGate\Merchant\Order::create(array(
-                'order_id'          => $order->id,
+                'order_id'          => $order->get_id(),
                 'price_amount'      => number_format($order->get_total(), 8, '.', ''),
                 'price_currency'    => get_woocommerce_currency(),
                 'receive_currency'  => $this->receive_currency,
                 'cancel_url'        => $order->get_cancel_order_url(),
                 'callback_url'      => trailingslashit(get_bloginfo('wpurl')) . '?wc-api=wc_gateway_coingate',
-                'success_url'       => add_query_arg('order', $order->id, add_query_arg('key', $order->order_key, $this->get_return_url($wcOrder))),
-                'title'             => get_bloginfo('name', 'raw') . ' Order #' . $order->id,
+                'success_url'       => add_query_arg('order', $order->get_id(), add_query_arg('key', $order->get_order_key(), $this->get_return_url($wcOrder))),
+                'title'             => get_bloginfo('name', 'raw') . ' Order #' . $order->get_id(),
                 'description'       => implode($description, ', '),
                 'token'             => $token
             ));
