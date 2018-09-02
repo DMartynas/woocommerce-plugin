@@ -130,12 +130,36 @@ function coingate_init()
                 echo wpautop(wptexturize($description));
             }
         }
+        public function change_stock( $order_id )
+        {
+            // Get an instance of the order object
+            $order = wc_get_order( $order_id );
 
+            // Iterating though each order items
+            foreach ( $order->get_items() as $item_id => $item_values ) 
+            {
+                // Item quantity
+                $item_qty = $item_values['qty'];
+
+                // getting the product ID (Simple and variable products)
+                $product_id = $item_values['variation_id'];
+                if( $product_id == 0 || empty($product_id) ) $product_id = $item_values['product_id'];
+
+                // Get an instance of the product object
+                $product = wc_get_product( $product_id );
+
+                // Get the stock quantity of the product
+                $product_stock = $product->get_stock_quantity();
+
+                // Increase back the stock quantity
+                wc_update_product_stock( $product, $item_qty, 'decrease' );
+            }
+        }
         public function process_payment($order_id)
         {
             global $woocommerce, $page, $paged;
             $order = new WC_Order($order_id);
-
+            
             $this->init_coingate();
 
             $description = array();
@@ -150,7 +174,7 @@ function coingate_init()
 
                 update_post_meta($order_id, 'coingate_order_token', $token);
             }
-
+            
             $wcOrder = wc_get_order($order_id);
 
             $order = \CoinGate\Merchant\Order::create(array(
@@ -160,8 +184,8 @@ function coingate_init()
                 'receive_currency'  => $this->receive_currency,
                 'cancel_url'        => $order->get_cancel_order_url(),
                 'callback_url'      => trailingslashit(get_bloginfo('wpurl')) . '?wc-api=wc_gateway_coingate',
-                'success_url'       => add_query_arg('order', $order->get_id(), add_query_arg('key', $order->get_order_key(), $this->get_return_url($wcOrder))),
-                'title'             => get_bloginfo('name', 'raw') . ' Order #' . $order->get_id(),
+                'success_url'       => add_query_arg('order', $order->id, add_query_arg('key', $order->order_key, $this->get_return_url($wcOrder))),
+                'title'             => get_bloginfo('name', 'raw') . ' Order #' . $order->id,
                 'description'       => implode($description, ', '),
                 'token'             => $token
             ));
@@ -217,6 +241,7 @@ function coingate_init()
 
                         $order->update_status($wcOrderStatus);
                         $order->add_order_note(__('Payment is confirmed on the network, and has been credited to the merchant. Purchased goods/services can be securely delivered to the buyer.', 'coingate'));
+                        $this->change_stock($order_id);
                         $order->payment_complete();
 
                         if ($order->status == 'processing' && ($statusWas == $wcExpiredStatus || $statusWas == $wcCanceledStatus)) {
