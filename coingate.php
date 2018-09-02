@@ -171,7 +171,7 @@ function coingate_init()
                 update_post_meta($order_id, 'coingate_order_token', $token);
             }
 
-            $wcOrder = wc_get_order($order_id);
+            $wcOrder = wc_get_order($order->get_id());
 
             $order = \CoinGate\Merchant\Order::create(array(
                 'order_id'          => $order->get_id(),
